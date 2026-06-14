@@ -8,6 +8,12 @@ on:
       - master
     paths:
       - python/**
+
+# Fix 1: Explicitly grant write access to GitHub Packages
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   push:
     name: "yolks:python_${{ matrix.tag }}"
@@ -35,11 +41,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v6 # Fix 3: Upgraded to v6 to prevent deprecation warnings
         with:
           context: ./python
           file: ./python/${{ matrix.tag }}/Dockerfile
           platforms: linux/amd64, linux/arm64
           push: true
+          # Fix 2: Changed hardcoded 'pterodactyl' namespace to dynamic owner
           tags: |
-            ghcr.io/pterodactyl/yolks:python_${{ matrix.tag }}
+            ghcr.io/${{ github.repository_owner }}/yolks:python_${{ matrix.tag }}
