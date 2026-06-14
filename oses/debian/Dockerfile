@@ -1,13 +1,38 @@
-FROM        --platform=$TARGETOS/$TARGETARCH debian:buster-slim
+#
+# Copyright (c) 2021 Matthew Penner
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+# Fix 1: Upgraded base image from EOL buster-slim to modern stable-slim
+FROM        --platform=$TARGETOS/$TARGETARCH debian:stable-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
-
 LABEL       org.opencontainers.image.source="https://github.com/pterodactyl/yolks"
 LABEL       org.opencontainers.image.licenses=MIT
 
+ENV         DEBIAN_FRONTEND=noninteractive
+
+# Fix 2: Used standard modern package names matching current Debian Stable repos
 RUN apt update && apt upgrade -y \
     && apt install -y gcc g++ \
-        libgcc1 \
+        libgcc-s1 \
         libc++-dev \
         gdb \
         libc6 \
@@ -42,17 +67,15 @@ RUN apt update && apt upgrade -y \
         software-properties-common \
         ca-certificates \
         tzdata \
-        liblua5.3-0 \
+        liblua5.3-dev \
         libz-dev \
         rapidjson-dev \
     && update-locale lang=en_US.UTF-8 \
     && dpkg-reconfigure --frontend noninteractive locales \
     && useradd -m -d /home/container -s /bin/bash container
 
-
 USER        container
 ENV         USER=container HOME=/home/container
-ENV         DEBIAN_FRONTEND noninteractive
 
 WORKDIR     /home/container
 
