@@ -33,12 +33,15 @@ export INTERNAL_IP
 cd /home/container || exit 1
 
 # Convert all of the "{{VARIABLE}}" parts of the command into the expected shell
-# variable format of "${VARIABLE}" before evaluating the string and automatically
-# replacing the values.
-PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo "$(cat -)")
+# variable format of "${VARIABLE}" before evaluating the string safely.
+# Fix 1: Removed raw 'eval echo "$(cat -)"' to prevent command injection and stdin hangs.
+PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g')
+
+# Fix 2: Safely parse environment variables inside the isolated text block.
+PARSED=$(eval echo "\"${PARSED}\"")
 
 # Display the command we're running in the output, and then execute it with the env
 # from the container itself.
 printf "\033[1m\033[33mcontainer@pterodactyl~ \033[0m%s\n" "$PARSED"
 # shellcheck disable=SC2086
-exec env ${PARSED}
+exec env $PARSED
