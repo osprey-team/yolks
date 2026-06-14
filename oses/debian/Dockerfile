@@ -20,16 +20,14 @@
 # SOFTWARE.
 #
 
-# Fix 1: Upgraded base image from EOL buster-slim to modern stable-slim
 FROM        --platform=$TARGETOS/$TARGETARCH debian:stable-slim
 
 LABEL       author="Michael Parker" maintainer="parker@pterodactyl.io"
-LABEL       org.opencontainers.image.source="https://github.com/pterodactyl/yolks"
+LABEL       org.opencontainers.image.source="https://github.com"
 LABEL       org.opencontainers.image.licenses=MIT
 
 ENV         DEBIAN_FRONTEND=noninteractive
 
-# Fix 2: Used standard modern package names matching current Debian Stable repos
 RUN apt update && apt upgrade -y \
     && apt install -y gcc g++ \
         libgcc-s1 \
@@ -55,7 +53,7 @@ RUN apt update && apt upgrade -y \
         libfontconfig \
         libicu-dev \
         icu-devtools \
-        libunwind8 \
+        libunwind-dev \
         libssl-dev \
         sqlite3 \
         libsqlite3-dev \
