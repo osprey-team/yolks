@@ -42,7 +42,7 @@ RUN apt update && apt upgrade -y \
         software-properties-common \
         ca-certificates \
         tzdata \
-        liblua5.3-dev \
+        liblua5.3-0 \
         libz-dev \
         rapidjson-dev \
     && update-locale lang=en_US.UTF-8 \
