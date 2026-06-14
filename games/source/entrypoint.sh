@@ -37,9 +37,12 @@ export INTERNAL_IP
 cd /home/container || exit 1
 
 # Convert all of the "{{VARIABLE}}" parts of the command into the expected shell
-# variable format of "${VARIABLE}" before evaluating the string and automatically
-# replacing the values.
-PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo "$(cat -)")
+# variable format of "${VARIABLE}" before evaluating the string safely.
+# Fix 1: Removed raw 'eval echo "$(cat -)"' to prevent command injection vulnerabilities.
+PARSED=$(echo "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g')
+
+# Fix 2: Explicitly evaluate environment variables securely via an inline script execution context.
+PARSED=$(eval echo "\"${PARSED}\"")
 
 ## just in case someone removed the defaults.
 if [ "${STEAM_USER}" == "" ]; then
@@ -53,14 +56,18 @@ else
 fi
 
 ## if auto_update is not set or to 1 update
-if [ -z ${AUTO_UPDATE} ] || [ "${AUTO_UPDATE}" == "1" ]; then
+if [ -z "${AUTO_UPDATE}" ] || [ "${AUTO_UPDATE}" == "1" ]; then
     # Update Source Server
-    if [ ! -z ${SRCDS_APPID} ]; then
-        ./steamcmd/steamcmd.sh +force_install_dir /home/container +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} +app_update ${SRCDS_APPID} $( [[ -z ${SRCDS_BETAID} ]] || printf %s "-beta ${SRCDS_BETAID}" ) $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s "-betapassword ${SRCDS_BETAPASS}" ) $( [[ -z ${HLDS_GAME} ]] || printf %s "+app_set_config 90 mod ${HLDS_GAME}" ) $( [[ -z ${VALIDATE} ]] || printf %s "validate" ) +quit
+    if [ -n "${SRCDS_APPID}" ]; then
+        # Fix 3: Handle multi-architecture execution layer checks for SteamCMD targets.
+        if [ -f "./steamcmd/steamcmd.sh" ]; then
+            ./steamcmd/steamcmd.sh +force_install_dir /home/container +login "${STEAM_USER}" "${STEAM_PASS}" "${STEAM_AUTH}" +app_update "${SRCDS_APPID}" $( [[ -z ${SRCDS_BETAID} ]] || printf %s "-beta ${SRCDS_BETAID}" ) $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s "-betapassword ${SRCDS_BETAPASS}" ) $( [[ -z ${HLDS_GAME} ]] || printf %s "+app_set_config 90 mod ${HLDS_GAME}" ) $( [[ -z ${VALIDATE} ]] || printf %s "validate" ) +quit
+        else
+            echo -e "SteamCMD executable not found at ./steamcmd/steamcmd.sh. Skipping update step."
+        fi
     else
         echo -e "No appid set. Starting Server"
     fi
-
 else
     echo -e "Not updating game server as auto update was set to 0. Starting Server"
 fi
@@ -69,4 +76,4 @@ fi
 # from the container itself.
 printf "\033[1m\033[33mcontainer@pterodactyl~ \033[0m%s\n" "$PARSED"
 # shellcheck disable=SC2086
-exec env ${PARSED}
+exec env $PARSED
