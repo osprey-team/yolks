@@ -6,10 +6,10 @@ on:
   push:
     branches:
       - main
+      - master
     paths:
       - steamcmd/**
 
-# Fix 1: Added explicit write permissions for GHCR
 permissions:
   contents: read
   packages: write
@@ -42,20 +42,18 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Fix 2: Convert the repository owner name to lowercase to prevent GHCR formatting errors
       - name: Downcase repository owner
         id: string
         run: echo "owner=${OWNER,,}" >> $GITHUB_OUTPUT
         env:
           OWNER: ${{ github.repository_owner }}
 
-      # Fix 3: Upgraded to v6
       - uses: docker/build-push-action@v6 
         with:
           context: ./steamcmd
           file: ./steamcmd/${{ matrix.distro }}/Dockerfile
           platforms: linux/amd64
           push: true
-          # Fix 4: Replaced hardcoded 'ptero-eggs' namespace with your dynamic, lowercased owner variable
+          # This line below dynamically replaces 'ptero-eggs' with 'osprey-team'
           tags: |
-            ghcr.io/${{ steps.string.outputs.owner }}/steamcmd:${{ matrix.distro }}
+            ghcr.io/${{ github.repository_owner }}/steamcmd:${{ matrix.distro }}
