@@ -9,7 +9,6 @@ on:
     paths:
       - games/**
 
-# Fix 1: Explicitly grant write access to GitHub Packages
 permissions:
   contents: read
   packages: write
@@ -28,20 +27,31 @@ jobs:
           - conan_exiles
     steps:
       - uses: actions/checkout@v4
+      
       - uses: docker/setup-buildx-action@v3
         with:
           buildkitd-flags: --debug
+          
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6 # Fix 3: Upgraded to v6 to prevent deprecation warnings
+
+      # Fix: Automatically convert the owner name to lowercase
+      - name: Downcase repository owner
+        id: string
+        run: |
+          echo "owner=${OWNER,,}" >> $GITHUB_OUTPUT
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - uses: docker/build-push-action@v6
         with:
           context: ./games/${{ matrix.game }}
           file: ./games/${{ matrix.game }}/Dockerfile
           platforms: linux/amd64
           push: true
-          # Fix 2: Changed hardcoded 'pterodactyl' namespace to dynamic owner
+          # Use the lowercased output step variable here
           tags: |
-            ghcr.io/${{ github.repository_owner }}/games:${{ matrix.game }}
+            ghcr.io/${{ steps.string.outputs.owner }}/games:${{ matrix.game }}
